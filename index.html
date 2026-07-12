@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1F6F6B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="سنتر مامي" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<title>سنتر مامي لحليب الأطفال</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Tajawal', sans-serif;
+    background: #F5F7F6;
+    color: #1F2A28;
+  }
+  button, input, select { font-family: inherit; }
+  .hidden { display: none !important; }
+
+  .header {
+    background: linear-gradient(135deg, #1F6F6B 0%, #2A8C86 100%);
+    padding: 22px 20px 26px;
+    color: #fff;
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+    box-shadow: 0 6px 20px rgba(31,111,107,0.25);
+  }
+  .header-top { display: flex; align-items: center; gap: 10px; }
+  .logo-box {
+    width: 42px; height: 42px; border-radius: 14px;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .header-title { font-weight: 900; font-size: 19px; }
+  .header-sub { font-size: 12.5px; opacity: 0.85; font-weight: 500; }
+  .pills { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  }
+
+  .tabs { display: flex; gap: 6px; padding: 14px 12px 0; }
+  .tab-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 10px 4px; border-radius: 14px; border: none;
+    background: #fff; color: #4B5B59; font-weight: 700; font-size: 11.5px;
+    cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    white-space: nowrap;
+  }
+  .tab-btn.active { background: #1F6F6B; color: #fff; box-shadow: 0 3px 10px rgba(31,111,107,0.25); }
+
+  .content { padding: 16px; padding-bottom: 90px; }
+
+  .card {
+    background: #fff; border-radius: 20px; padding: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .field { margin-bottom: 10px; }
+  .field label {
+    font-size: 12.5px; font-weight: 700; color: #6B7C79;
+    margin-bottom: 5px; display: block;
+  }
+  .input {
+    width: 100%; padding: 11px 12px; font-size: 14.5px;
+    border-radius: 12px; border: 2px solid #E1E8E6; outline: none;
+    background: #fff; color: #1F2A28;
+  }
+  .input:focus { border-color: #2A8C86; }
+  .input-ltr { direction: ltr; text-align: left; }
+
+  .btn-primary {
+    width: 100%; padding: 12px; border-radius: 14px; border: none;
+    background: #1F6F6B; color: #fff; font-weight: 700; font-size: 14.5px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    box-sizing: border-box;
+  }
+  .btn-secondary {
+    width: 100%; padding: 12px; border-radius: 14px; border: 2px solid #1F6F6B;
+    background: #fff; color: #1F6F6B; font-weight: 700; font-size: 14.5px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-danger {
+    width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #FCA5A5;
+    background: #FEF2F2; color: #B91C1C; font-weight: 700; font-size: 13px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .icon-btn {
+    border: none; background: #F1F5F4; border-radius: 10px;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #6B7C79; font-size: 14px; flex-shrink: 0;
+  }
+
+  .barcode-row { position: relative; }
+  .scan-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .scan-btn-row > * { flex: 1; }
+
+  .stat-row { display: flex; gap: 8px; margin-top: 12px; }
+  .stat-box { flex: 1; border-radius: 12px; padding: 10px 12px; text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 900; }
+  .stat-label { font-size: 11px; font-weight: 600; color: #6B7C79; }
+
+  .section-title {
+    font-weight: 800; font-size: 13.5px; margin-bottom: 8px; color: #1F2A28;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .divider { border-top: 1px solid #F0F3F2; padding-top: 14px; margin-top: 16px; }
+
+  .search-wrap { position: relative; margin-bottom: 12px; }
+
+  .empty-state { text-align: center; color: #8AA7A4; padding: 40px 20px; }
+
+  .prod-card {
+    background: #fff; border-radius: 16px; padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; margin-bottom: 10px;
+  }
+  .prod-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .prod-name { font-weight: 800; font-size: 15px; color: #1F2A28; }
+  .prod-code { font-size: 11.5px; color: #9AAAA7; direction: ltr; text-align: left; margin-top: 2px; }
+  .qty-badge { background: #F1F5F4; border-radius: 10px; padding: 4px 10px; font-weight: 800; font-size: 14px; white-space: nowrap; }
+  .prod-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .status-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 13.5px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    z-index: 60; max-width: 88%; text-align: center;
+  }
+
+  .scanner-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #reader { width: 100%; max-width: 380px; border-radius: 16px; overflow: hidden; }
+  .scanner-hint { color: #fff; font-size: 13px; margin-top: 16px; text-align: center; opacity: 0.85; }
+  .scanner-cancel {
+    margin-top: 18px; padding: 12px 26px; border-radius: 14px; border: none;
+    background: #fff; color: #1F2A28; font-weight: 700; cursor: pointer; font-size: 14px;
+  }
+
+  .setup-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .setup-card {
+    background: #fff; border-radius: 20px; padding: 24px; max-width: 460px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); line-height: 1.9;
+  }
+  .setup-card code {
+    background: #F1F5F4; padding: 2px 6px; border-radius: 6px; direction: ltr; display: inline-block;
+    font-size: 13px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================= -->
+<!--  إعداد Firebase: استبدل القيم بالأسفل بمعلومات مشروعك الخاص     -->
+<!--  راجع تعليمات الإعداد المرفقة (SETUP.md) للحصول على هذه القيم    -->
+<!-- ============================================================= -->
+<script>
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+</script>
+
+<div id="setup-screen" class="setup-screen hidden">
+  <div class="setup-card">
+    <div style="font-size:22px;margin-bottom:10px;">⚙️ الإعداد الأولي مطلوب</div>
+    <p>لم تُضبط بيانات قاعدة البيانات (Firebase) بعد. افتح ملف <code>index.html</code> وابحث عن <code>firebaseConfig</code> بالأعلى، واستبدل القيم بمعلومات مشروعك من Firebase.</p>
+    <p>راجع ملف <code>SETUP.md</code> المرفق مع التطبيق للحصول على خطوات مفصّلة بالعربي لإنشاء المشروع مجاناً بخمس دقائق.</p>
+  </div>
+</div>
+
+<div id="app-root" class="hidden">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo-box"><img src="icons/icon-192.png" alt="شعار سنتر مامي" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" /></div>
+      <div>
+        <div class="header-title">سنتر مامي لحليب الأطفال</div>
+        <div class="header-sub" id="header-sub">جارِ الاتصال بقاعدة البيانات...</div>
+      </div>
+    </div>
+    <div class="pills" id="alert-pills"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-scan" onclick="switchTab('scan')">🔍<span>مسح المادة</span></button>
+    <button class="tab-btn" id="tab-sales" onclick="switchTab('sales')">💰<span>المبيعات</span></button>
+    <button class="tab-btn" id="tab-inventory" onclick="switchTab('inventory')">📦<span>المخزون</span></button>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<div id="toast-holder"></div>
+
+<div class="scanner-overlay hidden" id="scanner-modal">
+  <div id="reader"></div>
+  <div class="scanner-hint">وجّه الكاميرا نحو الباركود</div>
+  <button class="scanner-cancel" onclick="closeScanner()">إلغاء</button>
+</div>
+
+
+<script>
+/* ---------- global state ---------- */
+let inventory = {};
+let sales = [];
+let loaded = { inv: false, sales: false };
+
+let tab = "scan";
+
+// scan tab state
+let activeBarcode = null;
+let mode = "idle"; // idle | found | notfound
+
+// sales tab state
+let saleBarcode = null;
+let saleMode = "idle"; // idle | found | notfound
+let salesDate = todayKey();
+
+let scannerTarget = "scan"; // scan | sale
+let html5QrCode = null;
+
+let db = null;
+let invRef = null, salesRef = null;
+
+/* ---------- helpers ---------- */
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function escJs(s) { return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr);
+  return Math.round((d - today) / 86400000);
+}
+function expiryStatus(dateStr) {
+  const days = daysUntil(dateStr);
+  if (days === null) return { label: "—", color: "#9CA3AF", bg: "#F3F4F6" };
+  if (days < 0) return { label: "منتهي الصلاحية", color: "#B91C1C", bg: "#FEE2E2" };
+  if (days <= 30) return { label: days + " يوم متبقي", color: "#B45309", bg: "#FEF3C7" };
+  return { label: days + " يوم متبقي", color: "#166534", bg: "#DCFCE7" };
+}
+// تاريخ بصيغة أرقام فقط (يوم/شهر/سنة) بدون اسم الشهر
+function fmtDate(dateStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return day + "/" + month + "/" + year;
+}
+function fmtTime(d) {
+  if (!d) return "—";
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return h + ":" + m;
+}
+function fmtMoney(v) {
+  if (v === null || v === undefined || v === "" || isNaN(v)) return "—";
+  const n = Number(v);
+  return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+function todayKey(d) {
+  const x = d || new Date();
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, "0");
+  const day = String(x.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+/* ---------- Firebase / storage layer ---------- */
+function initApp() {
+  const notConfigured = !firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY";
+  if (notConfigured) {
+    document.getElementById("setup-screen").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("app-root").classList.remove("hidden");
+
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+
+  invRef = db.collection("store").doc("inventory");
+  salesRef = db.collection("sales");
+
+  invRef.onSnapshot(
+    (doc) => {
+      inventory = doc.exists && doc.data().items ? doc.data().items : {};
+      loaded.inv = true;
+      renderAll();
+    },
+    () => { loaded.inv = true; showToast("تعذّر الاتصال بقاعدة البيانات، تحقق من إعداد Firebase", "error"); renderAll(); }
+  );
+
+  salesRef.orderBy("ts", "desc").limit(500).onSnapshot(
+    (snap) => {
+      sales = snap.docs.map(d => {
+        const x = d.data();
+        return { id: d.id, ...x, tsDate: x.ts && x.ts.toDate ? x.ts.toDate() : null };
+      });
+      loaded.sales = true;
+      renderAll();
+    },
+    () => { loaded.sales = true; renderAll(); }
+  );
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+}
+
+async function saveInventory(next) {
+  inventory = next;
+  try {
+    await invRef.set({ items: next });
+  } catch (e) {
+    showToast("تعذّر الحفظ، تحقق من الاتصال", "error");
+  }
+}
+
+function showToast(text, kind) {
+  const holder = document.getElementById("toast-holder");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.style.background = kind === "error" ? "#B91C1C" : "#1F6F6B";
+  el.innerHTML = (kind === "error" ? "⚠️ " : "✅ ") + esc(text);
+  holder.innerHTML = "";
+  holder.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2600);
+}
+
+function switchTab(t) {
+  tab = t;
+  ["scan", "sales", "inventory"].forEach(id => {
+    document.getElementById("tab-" + id).classList.toggle("active", id === t);
+  });
+  renderContent();
+}
+
+/* ================= SCAN TAB (lookup / add / restock / edit) ================= */
+function resetPanel() {
+  activeBarcode = null;
+  mode = "idle";
+  renderContent();
+  const bi = document.getElementById("barcode-input");
+  if (bi) { bi.value = ""; bi.focus(); }
+}
+
+function lookupBarcode() {
+  const input = document.getElementById("barcode-input");
+  const code = (input ? input.value : "").trim();
+  if (!code) return;
+  activeBarcode = code;
+  mode = inventory[code] ? "found" : "notfound";
+  renderContent();
+}
+function handleBarcodeKeydown(e) {
+  if (e.key === "Enter") { e.preventDefault(); lookupBarcode(); }
+}
+
+async function addNewProduct() {
+  const name = document.getElementById("new-name").value.trim();
+  const qty = parseInt(document.getElementById("new-qty").value, 10);
+  const expiry = document.getElementById("new-expiry").value;
+  const purchasePrice = parseFloat(document.getElementById("new-purchase-price").value);
+  const sellPrice = parseFloat(document.getElementById("new-sell-price").value);
+  if (!name) return showToast("أدخل اسم المادة", "error");
+  if (!qty || qty < 1) return showToast("أدخل عدداً صحيحاً أكبر من صفر", "error");
+  if (!expiry) return showToast("أدخل تاريخ الانتهاء", "error");
+  if (isNaN(purchasePrice) || purchasePrice < 0) return showToast("أدخل سعر شراء صحيح", "error");
+  if (isNaN(sellPrice) || sellPrice < 0) return showToast("أدخل سعر بيع صحيح", "error");
+  const next = { ...inventory, [activeBarcode]: { name, quantity: qty, expiryDate: expiry, purchasePrice, sellPrice } };
+  await saveInventory(next);
+  showToast('تمت إضافة "' + name + '" إلى المخزون');
+  resetPanel();
+}
+
+async function doRestock() {
+  const qty = parseInt(document.getElementById("restock-qty").value, 10);
+  const expiry = document.getElementById("restock-expiry").value;
+  const current = inventory[activeBarcode];
+  if (!current) return;
+  if (!qty || qty < 1) return showToast("أدخل عدداً صحيحاً أكبر من صفر", "error");
+  const next = { ...inventory, [activeBarcode]: { ...current, quantity: current.quantity + qty, expiryDate: expiry || current.expiryDate } };
+  await saveInventory(next);
+  showToast("تم تسجيل إضافة " + qty + ' إلى "' + current.name + '"');
+  resetPanel();
+}
+
+async function saveProductEdits(barcode) {
+  const current = inventory[barcode];
+  if (!current) return;
+  const purchasePrice = parseFloat(document.getElementById("edit-purchase-price").value);
+  const sellPrice = parseFloat(document.getElementById("edit-sell-price").value);
+  if (isNaN(purchasePrice) || purchasePrice < 0) return showToast("أدخل سعر شراء صحيح", "error");
+  if (isNaN(sellPrice) || sellPrice < 0) return showToast("أدخل سعر بيع صحيح", "error");
+  const next = { ...inventory, [barcode]: { ...current, purchasePrice, sellPrice } };
+  await saveInventory(next);
+  showToast("تم حفظ التعديلات");
+  renderContent();
+}
+
+async function deleteProduct(code) {
+  const current = inventory[code];
+  if (!current) return;
+  if (!confirm('هل تريد حذف "' + current.name + '" نهائياً من المخزون؟')) return;
+  const next = { ...inventory };
+  delete next[code];
+  await saveInventory(next);
+  showToast('تم حذف "' + current.name + '"');
+  if (activeBarcode === code) resetPanel();
+}
+
+function editFromList(code) {
+  tab = "scan";
+  ["scan", "sales", "inventory"].forEach(id => {
+    document.getElementById("tab-" + id).classList.toggle("active", id === "scan");
+  });
+  activeBarcode = code;
+  mode = inventory[code] ? "found" : "notfound";
+  renderContent();
+}
+
+function filterInventoryList() {
+  const q = document.getElementById("inv-search").value.trim().toLowerCase();
+  document.querySelectorAll("#content .prod-card").forEach(card => {
+    const name = (card.dataset.name || "").toLowerCase();
+    const code = (card.dataset.code || "").toLowerCase();
+    const match = !q || name.includes(q) || code.includes(q);
+    card.style.display = match ? "" : "none";
+  });
+}
+
+/* ================= SALES TAB ================= */
+function resetSalePanel() {
+  saleBarcode = null;
+  saleMode = "idle";
+  renderContent();
+  const bi = document.getElementById("sale-barcode-input");
+  if (bi) { bi.value = ""; bi.focus(); }
+}
+function lookupSaleBarcode() {
+  const input = document.getElementById("sale-barcode-input");
+  const code = (input ? input.value : "").trim();
+  if (!code) return;
+  saleBarcode = code;
+  saleMode = inventory[code] ? "found" : "notfound";
+  renderContent();
+}
+function handleSaleBarcodeKeydown(e) {
+  if (e.key === "Enter") { e.preventDefault(); lookupSaleBarcode(); }
+}
+function changeSalesDate(v) {
+  salesDate = v;
+  renderContent();
+}
+
+async function confirmSale(barcode) {
+  const current = inventory[barcode];
+  if (!current) return;
+  const qty = parseInt(document.getElementById("sale-qty").value, 10);
+  const price = parseFloat(document.getElementById("sale-price").value);
+  if (!qty || qty < 1) return showToast("أدخل كمية صحيحة", "error");
+  if (qty > current.quantity) return showToast("الكمية المطلوبة أكبر من المتوفر بالمخزون", "error");
+  if (isNaN(price) || price < 0) return showToast("أدخل سعر بيع صحيح", "error");
+  const total = qty * price;
+  const now = new Date();
+  try {
+    await salesRef.add({
+      barcode, name: current.name,
+      qty, unitPrice: price, total,
+      dateKey: todayKey(now),
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const next = { ...inventory, [barcode]: { ...current, quantity: current.quantity - qty } };
+    await saveInventory(next);
+    showToast("تم تسجيل بيع " + qty + ' من "' + current.name + '"');
+    resetSalePanel();
+  } catch (e) {
+    showToast("تعذّر تسجيل عملية البيع", "error");
+  }
+}
+
+/* ---------- camera scanning ---------- */
+function openScanner(target) {
+  scannerTarget = target || "scan";
+  document.getElementById("scanner-modal").classList.remove("hidden");
+  html5QrCode = new Html5Qrcode("reader");
+  const config = {
+    fps: 12,
+    qrbox: { width: 260, height: 160 },
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.ITF,
+      Html5QrcodeSupportedFormats.QR_CODE
+    ]
+  };
+  html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+    .catch(() => {
+      showToast("تعذّر تشغيل الكاميرا، تحقق من الأذونات", "error");
+      closeScanner();
+    });
+}
+function onScanSuccess(decodedText) {
+  if (!html5QrCode) return;
+  html5QrCode.stop().then(() => {
+    html5QrCode.clear();
+    html5QrCode = null;
+    document.getElementById("scanner-modal").classList.add("hidden");
+    if (scannerTarget === "sale") {
+      const bi = document.getElementById("sale-barcode-input");
+      if (bi) bi.value = decodedText;
+      lookupSaleBarcode();
+    } else {
+      const bi = document.getElementById("barcode-input");
+      if (bi) bi.value = decodedText;
+      lookupBarcode();
+    }
+  }).catch(() => { html5QrCode = null; });
+}
+function closeScanner() {
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => { html5QrCode.clear(); html5QrCode = null; }).catch(() => { html5QrCode = null; });
+  }
+  document.getElementById("scanner-modal").classList.add("hidden");
+}
+
+/* ---------- rendering ---------- */
+function renderAll() {
+  renderHeader();
+  renderContent();
+}
+
+function renderHeader() {
+  const entries = Object.entries(inventory).map(([code, p]) => ({ code, ...p }));
+  document.getElementById("header-sub").textContent = loaded.inv ? entries.length + " صنف بالمخزون" : "جارِ التحميل...";
+
+  const expired = entries.filter(e => daysUntil(e.expiryDate) !== null && daysUntil(e.expiryDate) < 0).length;
+  const soon = entries.filter(e => { const d = daysUntil(e.expiryDate); return d !== null && d >= 0 && d <= 30; }).length;
+  const low = entries.filter(e => e.quantity <= 3).length;
+
+  let html = "";
+  if (expired > 0) html += '<div class="pill" style="background:rgba(185,28,28,0.25)">⚠️ ' + expired + ' منتهي</div>';
+  if (soon > 0) html += '<div class="pill" style="background:rgba(180,83,9,0.25)">📅 ' + soon + ' قارب على الانتهاء</div>';
+  if (low > 0) html += '<div class="pill" style="background:rgba(255,255,255,0.18)">📦 ' + low + ' كمية منخفضة</div>';
+  document.getElementById("alert-pills").innerHTML = html;
+}
+
+function renderContent() {
+  const el = document.getElementById("content");
+  if (tab === "sales") el.innerHTML = salesTabHtml();
+  else if (tab === "inventory") el.innerHTML = inventoryTabHtml();
+  else el.innerHTML = scanTabHtml();
+}
+
+/* ---- scan tab html ---- */
+function scanTabHtml() {
+  let html = `
+    <div class="card">
+      <label style="font-size:13px;font-weight:700;color:#4B5B59;margin-bottom:8px;display:block;">
+        امسح الباركود بالكاميرا أو أدخله يدوياً
+      </label>
+      <div class="barcode-row">
+        <input id="barcode-input" class="input input-ltr" placeholder="رقم الباركود ثم Enter"
+          onkeydown="handleBarcodeKeydown(event)" />
+      </div>
+      <div class="scan-btn-row">
+        <button class="btn-secondary" onclick="openScanner('scan')">📷 مسح بالكاميرا</button>
+        <button class="btn-primary" onclick="lookupBarcode()">بحث</button>
+      </div>
+    </div>
+  `;
+
+  if (mode === "found" && activeBarcode && inventory[activeBarcode]) {
+    html += productFoundHtml(activeBarcode, inventory[activeBarcode]);
+  } else if (mode === "notfound" && activeBarcode) {
+    html += `
+      <div class="card" style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="font-weight:800;font-size:15px;">مادة جديدة</div>
+          <button class="icon-btn" onclick="resetPanel()">✕</button>
+        </div>
+        <div style="font-size:12.5px;color:#8AA7A4;margin-bottom:12px;direction:ltr;text-align:left;">${esc(activeBarcode)}</div>
+        <div class="field"><label>اسم المادة</label>
+          <input id="new-name" class="input" placeholder="مثال: حليب نيدو للرضع 400غ" />
+        </div>
+        <div class="field"><label>العدد</label>
+          <input id="new-qty" type="number" min="1" class="input" placeholder="مثال: 20" />
+        </div>
+        <div class="field"><label>تاريخ الانتهاء</label>
+          <input id="new-expiry" type="date" class="input" />
+        </div>
+        <div class="field"><label>سعر الشراء</label>
+          <input id="new-purchase-price" type="number" min="0" step="0.01" class="input input-ltr" placeholder="0.00" />
+        </div>
+        <div class="field"><label>سعر البيع</label>
+          <input id="new-sell-price" type="number" min="0" step="0.01" class="input input-ltr" placeholder="0.00" />
+        </div>
+        <button class="btn-primary" onclick="addNewProduct()">➕ إضافة إلى المخزون</button>
+      </div>
+    `;
+  }
+  return html;
+}
+
+function productFoundHtml(barcode, product) {
+  const st = expiryStatus(product.expiryDate);
+  return `
+    <div class="card" style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:900;font-size:17px;">${esc(product.name)}</div>
+          <div style="font-size:11.5px;color:#9AAAA7;direction:ltr;text-align:left;margin-top:2px;">${esc(barcode)}</div>
+        </div>
+        <button class="icon-btn" onclick="resetPanel()">✕</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box" style="background:#F1F5F4;">
+          <div class="stat-num" style="color:#1F6F6B;">${product.quantity}</div>
+          <div class="stat-label">القطع المتوفرة</div>
+        </div>
+        <div class="stat-box" style="background:${st.bg};flex:1.4;">
+          <div style="font-size:13.5px;font-weight:800;color:${st.color};">${fmtDate(product.expiryDate)}</div>
+          <div style="font-size:11px;color:${st.color};font-weight:600;">${st.label}</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box" style="background:#EFF6FF;">
+          <div class="stat-num" style="color:#1D4ED8;font-size:16px;">${fmtMoney(product.purchasePrice)}</div>
+          <div class="stat-label">سعر الشراء</div>
+        </div>
+        <div class="stat-box" style="background:#ECFDF5;">
+          <div class="stat-num" style="color:#047857;font-size:16px;">${fmtMoney(product.sellPrice)}</div>
+          <div class="stat-label">سعر البيع</div>
+        </div>
+      </div>
+
+      <div class="divider">
+        <div class="section-title">📥 إضافة للمخزون (شراء جديد)</div>
+        <div class="field"><label>العدد المضاف</label>
+          <input id="restock-qty" type="number" min="1" class="input" />
+        </div>
+        <div class="field"><label>تاريخ الانتهاء (اختياري تحديثه)</label>
+          <input id="restock-expiry" type="date" class="input" value="${esc(product.expiryDate || "")}" />
+        </div>
+        <button class="btn-primary" onclick="doRestock()">تأكيد الإضافة</button>
+      </div>
+
+      <div class="divider">
+        <div class="section-title">✏️ تعديل الأسعار</div>
+        <div class="field"><label>سعر الشراء</label>
+          <input id="edit-purchase-price" type="number" min="0" step="0.01" class="input input-ltr" value="${product.purchasePrice != null ? product.purchasePrice : ''}" />
+        </div>
+        <div class="field"><label>سعر البيع</label>
+          <input id="edit-sell-price" type="number" min="0" step="0.01" class="input input-ltr" value="${product.sellPrice != null ? product.sellPrice : ''}" />
+        </div>
+        <button class="btn-secondary" onclick="saveProductEdits('${escJs(barcode)}')">💾 حفظ التعديلات</button>
+      </div>
+
+      <button class="btn-danger" style="margin-top:14px;" onclick="deleteProduct('${escJs(barcode)}')">🗑️ حذف هذه المادة نهائياً</button>
+    </div>
+  `;
+}
+
+/* ---- sales tab html ---- */
+function salesTabHtml() {
+  let html = `
+    <div class="card">
+      <label style="font-size:13px;font-weight:700;color:#4B5B59;margin-bottom:8px;display:block;">
+        امسح باركود المنتج لتسجيل عملية بيع
+      </label>
+      <div class="barcode-row">
+        <input id="sale-barcode-input" class="input input-ltr" placeholder="رقم الباركود ثم Enter"
+          onkeydown="handleSaleBarcodeKeydown(event)" />
+      </div>
+      <div class="scan-btn-row">
+        <button class="btn-secondary" onclick="openScanner('sale')">📷 مسح بالكاميرا</button>
+        <button class="btn-primary" style="background:#B45309;" onclick="lookupSaleBarcode()">بحث</button>
+      </div>
+    </div>
+  `;
+
+  if (saleMode === "found" && saleBarcode && inventory[saleBarcode]) {
+    html += saleFoundHtml(saleBarcode, inventory[saleBarcode]);
+  } else if (saleMode === "notfound" && saleBarcode) {
+    html += `
+      <div class="card" style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:800;">هذا الباركود غير موجود بالمخزون</div>
+          <button class="icon-btn" onclick="resetSalePanel()">✕</button>
+        </div>
+        <div style="font-size:12.5px;color:#8AA7A4;margin-top:6px;">أضف المنتج أولاً من تبويب "مسح المادة"</div>
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="divider" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div class="section-title" style="margin-bottom:0;">🧾 مبيعات اليوم</div>
+        <input type="date" id="sales-date-picker" class="input" style="width:auto;padding:8px 10px;font-size:13px;" value="${salesDate}" onchange="changeSalesDate(this.value)" />
+      </div>
+      ${salesListHtml()}
+    </div>
+  `;
+  return html;
+}
+
+function saleFoundHtml(barcode, product) {
+  return `
+    <div class="card" style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:900;font-size:17px;">${esc(product.name)}</div>
+          <div style="font-size:11.5px;color:#9AAAA7;direction:ltr;text-align:left;margin-top:2px;">${esc(barcode)}</div>
+        </div>
+        <button class="icon-btn" onclick="resetSalePanel()">✕</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box" style="background:#F1F5F4;">
+          <div class="stat-num" style="color:#1F6F6B;">${product.quantity}</div>
+          <div class="stat-label">المتوفر</div>
+        </div>
+        <div class="stat-box" style="background:#ECFDF5;">
+          <div class="stat-num" style="color:#047857;font-size:16px;">${fmtMoney(product.sellPrice)}</div>
+          <div class="stat-label">سعر البيع الافتراضي</div>
+        </div>
+      </div>
+      <div class="divider">
+        <div class="section-title">💰 تسجيل عملية بيع</div>
+        <div class="field"><label>الكمية</label>
+          <input id="sale-qty" type="number" min="1" max="${product.quantity}" value="1" class="input" />
+        </div>
+        <div class="field"><label>سعر البيع للقطعة</label>
+          <input id="sale-price" type="number" min="0" step="0.01" class="input input-ltr" value="${product.sellPrice != null ? product.sellPrice : ''}" />
+        </div>
+        <button class="btn-primary" style="background:#B45309;" onclick="confirmSale('${escJs(barcode)}')">✅ تأكيد البيع</button>
+      </div>
+    </div>
+  `;
+}
+
+function salesListHtml() {
+  if (!loaded.sales) return `<div class="empty-state" style="padding:20px;">جارِ تحميل المبيعات...</div>`;
+  const dayList = sales.filter(s => s.dateKey === salesDate);
+  if (dayList.length === 0) {
+    return `<div class="empty-state" style="padding:24px;">🧾<div style="font-weight:700;margin-top:6px;">لا توجد عمليات بيع لهذا اليوم</div></div>`;
+  }
+  let sumTotal = 0, sumQty = 0, rows = "";
+  dayList.forEach(s => {
+    sumTotal += (s.total || 0);
+    sumQty += (s.qty || 0);
+    rows += `
+      <div class="prod-card" style="cursor:default;margin-bottom:8px;">
+        <div class="prod-top">
+          <div style="min-width:0;">
+            <div class="prod-name" style="font-size:14px;">${esc(s.name)}</div>
+            <div class="prod-code">${s.tsDate ? fmtTime(s.tsDate) : "—"} · الكمية: ${s.qty} × ${fmtMoney(s.unitPrice)}</div>
+          </div>
+          <div class="qty-badge" style="color:#047857;">${fmtMoney(s.total)}</div>
+        </div>
+      </div>
+    `;
+  });
+  return `
+    <div class="stat-row" style="margin-top:0;margin-bottom:12px;">
+      <div class="stat-box" style="background:#F1F5F4;">
+        <div class="stat-num" style="color:#1F6F6B;">${sumQty}</div>
+        <div class="stat-label">القطع المباعة</div>
+      </div>
+      <div class="stat-box" style="background:#ECFDF5;flex:1.4;">
+        <div class="stat-num" style="color:#047857;">${fmtMoney(sumTotal)}</div>
+        <div class="stat-label">إجمالي مبيعات اليوم</div>
+      </div>
+    </div>
+    ${rows}
+  `;
+}
+
+/* ---- inventory tab html ---- */
+function inventoryTabHtml() {
+  let html = `
+    <div class="search-wrap">
+      <input id="inv-search" class="input" placeholder="ابحث بالاسم أو الباركود" oninput="filterInventoryList()" />
+    </div>
+  `;
+
+  if (!loaded.inv) {
+    html += `<div class="empty-state">جارِ التحميل...</div>`;
+    return html;
+  }
+
+  const entries = Object.entries(inventory).map(([code, p]) => ({ code, ...p }));
+  if (entries.length === 0) {
+    html += `<div class="empty-state">📦<div style="font-weight:700;margin-top:8px;">لا توجد مواد بالمخزون بعد</div>
+      <div style="font-size:13px;margin-top:4px;">ابدأ بمسح أول مادة من تبويب "مسح المادة"</div></div>`;
+    return html;
+  }
+
+  entries.sort((a, b) => {
+    const da = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+    const db = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+    return da - db;
+  });
+
+  html += entries.map(e => productListItemHtml(e)).join("");
+  return html;
+}
+
+function productListItemHtml(e) {
+  const st = expiryStatus(e.expiryDate);
+  return `
+    <div class="prod-card" data-name="${esc(e.name)}" data-code="${esc(e.code)}"
+      style="border-right:4px solid ${st.color};" onclick="editFromList('${escJs(e.code)}')">
+      <div class="prod-top">
+        <div style="min-width:0;">
+          <div class="prod-name">${esc(e.name)}</div>
+          <div class="prod-code">${esc(e.code)}</div>
+        </div>
+        <div class="qty-badge" style="color:${e.quantity <= 3 ? '#B45309' : '#1F6F6B'};">${e.quantity} قطعة</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:11.5px;color:#6B7C79;font-weight:700;">
+        <span>شراء: ${fmtMoney(e.purchasePrice)}</span>
+        <span>بيع: ${fmtMoney(e.sellPrice)}</span>
+      </div>
+      <div class="prod-bottom">
+        <span class="status-badge" style="color:${st.color};background:${st.bg};">${fmtDate(e.expiryDate)} · ${st.label}</span>
+        <button class="icon-btn" style="color:#B91C1C;" onclick="event.stopPropagation();deleteProduct('${escJs(e.code)}')">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+initApp();
+</script>
+</body>
+</html>
